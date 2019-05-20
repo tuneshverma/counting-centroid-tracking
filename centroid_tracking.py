@@ -11,58 +11,63 @@ def Drawline(frame, x1, y1, x2, y2):
 
 	return cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 255), 2)
 
-x1 = int(0)
-x2 = int(W)
-y1 = int(H//2)
-y2 = int(H//2)
+ct = CentroidTracker(maxDisappeared=10, maxDistance=300)
+trackableObjects = {}
 
-Drawline(result, x1, y1, x2, y2)
+while True:
 
-objects = ct.update(box)
+	x1 = int(0)
+	x2 = int(W)
+	y1 = int(H//2)
+	y2 = int(H//2)
 
-for (objectID, centroid) in objects.items():
-	to = trackableObjects.get(objectID, None)
+	Drawline(result, x1, y1, x2, y2)
 
-	if to is None:
-		to = TrackableObject(objectID, centroid)
+	objects = ct.update(box)
 
-	else:
-		x = [u[0] for u in to.centroids]
-		y = [c[1] for c in to.centroids]
+	for (objectID, centroid) in objects.items():
+		to = trackableObjects.get(objectID, None)
 
-		direction = centroid[1] - np.mean(y)
-		to.centroids.append(centroid)
+		if to is None:
+			to = TrackableObject(objectID, centroid)
 
-		last_x = x[-1]
-		last_y = y[-1]
-		now_x = centroid[0]
-		now_y = centroid[1]
+		else:
+			x = [u[0] for u in to.centroids]
+			y = [c[1] for c in to.centroids]
 
-		line_last_y = line(last_x, x1, y1, x2, y2)
-		line_now_y = line(now_x, x1, y1, x2, y2)
+			direction = centroid[1] - np.mean(y)
+			to.centroids.append(centroid)
 
-		if not to.counted:
+			last_x = x[-1]
+			last_y = y[-1]
+			now_x = centroid[0]
+			now_y = centroid[1]
 
-			if (last_y - line_last_y) > 0 and  (now_y - line_now_y) <= 0:
-				totalUp += 1
-				to.counted = True
+			line_last_y = line(last_x, x1, y1, x2, y2)
+			line_now_y = line(now_x, x1, y1, x2, y2)
 
-			elif (last_y - line_last_y) < 0 and  (now_y - line_now_y) >= 0:
-				totalDown += 1
-				to.counted = True
+			if not to.counted:
 
-	trackableObjects[objectID] = to
+				if (last_y - line_last_y) > 0 and  (now_y - line_now_y) <= 0:
+					totalUp += 1
+					to.counted = True
 
-	text = "ID {}".format(objectID)
-	cv2.putText(result, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-	cv2.circle(result, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+				elif (last_y - line_last_y) < 0 and  (now_y - line_now_y) >= 0:
+					totalDown += 1
+					to.counted = True
 
-       
-info = [
-	("up", totalUp),
-	("Down", totalDown),
-	]
+		trackableObjects[objectID] = to
 
-for (i, (k, v)) in enumerate(info):
-	text = "{}: {}".format(k, v)
-	cv2.putText(result, text, (10, H - ((i * 20) + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+		text = "ID {}".format(objectID)
+		cv2.putText(result, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+		cv2.circle(result, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+
+
+	info = [
+		("up", totalUp),
+		("Down", totalDown),
+		]
+
+	for (i, (k, v)) in enumerate(info):
+		text = "{}: {}".format(k, v)
+		cv2.putText(result, text, (10, H - ((i * 20) + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
